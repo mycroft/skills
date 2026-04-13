@@ -27,4 +27,5 @@ npx skills add mycroft/skills
 | Skill | Description |
 |-------|-------------|
 | [commit](skills/commit/SKILL.md) | Commit current changes with a descriptive, conventional message |
+| [migration-plan](skills/migration-plan/SKILL.md) | Prepare a structured migration plan with steps, verification, revert paths, and communication |
 | [review](skills/review/SKILL.md) | Review code or a PR — catches bugs, security issues, and design problems |
