@@ -14,6 +14,7 @@ See [skills.sh](https://skills.sh/) for the broader ecosystem and a directory of
 - **Code review** — phased PR review covering architecture, correctness, security, and performance
 - **Migration planning** — produces structured migration documents with steps, verification checklists, and revert paths
 - **README generation** — creates or updates project READMEs with a consistent, onboarding-focused structure
+- **kind cluster** — bootstraps a local Kubernetes cluster with configurable topology, port mappings, and container engine
 
 ## Getting Started
 
@@ -42,6 +43,7 @@ npx skills add mycroft/skills/<skill-name>
 |-------|-------------|
 | [commit](skills/commit/SKILL.md) | Commit current changes with a descriptive, conventional message |
 | [helmfile-test](skills/helmfile-test/SKILL.md) | Test apps locally using helmfile — bootstrap a kind cluster, then diff or apply releases |
+| [kind-cluster](skills/kind-cluster/SKILL.md) | Start a local kind cluster with configurable nodes, roles, and container engine |
 | [migration-plan](skills/migration-plan/SKILL.md) | Prepare a structured migration plan with steps, verification, revert paths, and communication |
 | [readme](skills/readme/SKILL.md) | Create or update a project README with intro, features, build instructions, and references |
 | [review](skills/review/SKILL.md) | Review code or a PR — catches bugs, security issues, and design problems |
