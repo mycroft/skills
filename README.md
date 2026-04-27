@@ -47,6 +47,7 @@ npx skills add mycroft/skills/<skill-name>
 | [migration-plan](skills/migration-plan/SKILL.md) | Prepare a structured migration plan with steps, verification, revert paths, and communication |
 | [readme](skills/readme/SKILL.md) | Create or update a project README with intro, features, build instructions, and references |
 | [review](skills/review/SKILL.md) | Review code or a PR — catches bugs, security issues, and design problems |
+| [technical-doc-writer](skills/technical-doc-writer/SKILL.md) | Transform technical docs into a clear, audience-appropriate summary using SQCA and the Pyramid Principle |
 
 ## Adding a Skill
 
