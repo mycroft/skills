@@ -7,7 +7,6 @@ Your task is to help the user to generate a commit message and commit the change
 
 ## Guidelines
 
-- DO NOT add any AI agent ads such as "Generated with [Claude Code](https://claude.ai/code)"
 - Only generate the message for staged files/changes
 - Don't add any files using `git add`. The user will decide what to add. 
 - Focus on why the change and not only the change content. If required, ask the user for more explaination.
@@ -55,9 +54,24 @@ feat(auth): add JWT login flow
 - Added documentation for the validation component
 ```
 
-## Jira Integration
+## Issue References
 
-If the user mentions a related Jira issue (e.g. "this is for ABC-1234"), append a `JIRA: <issue-key>` line at the very end of the commit message, separated by a blank line:
+If the user mentions a related issue, append a trailer at the very end of the message, separated by
+a blank line. Which trailer depends on the kind of issue:
+
+| User mentioned | Trailer |
+| ---------------------------------------- | -------------------------------------------- |
+| A Jira issue (e.g. "this is for ABC-1234") | `JIRA: ABC-1234` |
+| Any other issue (e.g. "#42", a tracker URL) | `Refs: #42`, `Fixes: #42`, or `Closes: #42` |
+
+For the non-Jira form, pick by whether this commit resolves the issue:
+
+- `Fixes:` — resolves a bug
+- `Closes:` — resolves a feature or task
+- `Refs:` — related, but leaves the issue open
+
+`Fixes` and `Closes` auto-close the issue on GitHub and GitLab once the commit reaches the default
+branch. If you are not certain this commit resolves the issue, use `Refs`.
 
 ```
 fix(auth): handle token expiry edge case
@@ -67,7 +81,7 @@ fix(auth): handle token expiry edge case
 JIRA: ABC-1234
 ```
 
-If no issue is mentioned, omit the line entirely — do not ask for one.
+If no issue is mentioned, omit the trailer entirely — do not ask for one.
 
 ## Rules
 
