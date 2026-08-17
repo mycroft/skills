@@ -14,6 +14,10 @@ skills/
     ...             # supporting files, only for tools or heavy reference
 ```
 
+Skills must live under `skills/`. The `npx skills` CLI finds `SKILL.md` anywhere in the repo, but
+the Claude Code plugin loader only reads `skills/` — a skill placed elsewhere installs via the CLI
+and is silently missing from the plugin.
+
 ## Install
 
 ### As a Claude Code plugin
@@ -36,7 +40,7 @@ npx skills add ./ -g              # user-wide: ~/.claude/skills/
 npx skills add ./ --list          # show what's available without installing
 npx skills update                 # update installed skills to latest
 npx skills list                   # what's installed where (alias: ls)
-npx skills remove editing-skills  # uninstall
+npx skills remove editing-skills  # uninstall one
 ```
 
 Default install is a symlink to a canonical copy, so edits here take effect immediately across
@@ -75,7 +79,9 @@ field; `name` and `description` are the only required ones.
 
 | Skill | Use when |
 |---|---|
+| `commit` | Writing a commit message and committing staged changes |
 | `editing-skills` | Changing, fixing, or extending a skill that already exists |
+| `review` | Reviewing code, a diff, or a pull request before approving or merging |
 
 ## Conventions
 
