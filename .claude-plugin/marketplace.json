@@ -1,0 +1,16 @@
+{
+  "name": "personal-skills-marketplace",
+  "description": "Marketplace for a personal skills library",
+  "owner": {
+    "name": "Patrick Marie",
+    "email": "patrick.marie@vibe.co"
+  },
+  "plugins": [
+    {
+      "name": "personal-skills",
+      "description": "Personal skills library",
+      "version": "0.1.0",
+      "source": "./"
+    }
+  ]
+}
