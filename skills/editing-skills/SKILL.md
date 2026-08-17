@@ -31,6 +31,21 @@ Check the transcript for whether the skill was actually invoked. Guessing wrong 
 5. **GREEN — re-run the new scenario AND the regression set.** Both must pass. A fix that breaks a case the skill used to handle is not a fix.
 6. **Report** the diff, the baseline failure verbatim, and the results of both runs.
 
+## Edit the Source, Then Deploy
+
+Edits belong in the development repo — typically `~/dev/skills` — never in a deployed copy. A deployed
+copy either shadows the source, so your change dies at the next install, or is a symlink back to it,
+so you were editing the source all along by a confusing path.
+
+Once the edit passes, propagate it with the `skills` CLI:
+
+- **Symlinked install** (the default): already live, nothing to run.
+- **`--copy` install:** `npx skills update <name>` re-syncs from the source.
+- **Installed from a git remote** rather than a local path: `npx skills update` fetches that remote, so
+  push first — otherwise the update pulls the old version back over your edit.
+
+Run `npx skills list` to see each skill's source and location when you are unsure which case applies.
+
 ## Budget the Edit
 
 Skills die by accretion: every edit adds a paragraph, and eventually nothing in the document is binding.
