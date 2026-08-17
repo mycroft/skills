@@ -1,9 +1,9 @@
 ---
-name: update-skill
+name: editing-skills
 description: Use when changing, fixing, or extending a skill that already exists — including editing its description or supporting files, or responding to a skill that failed to trigger or was followed incorrectly
 ---
 
-# Update Skill
+# Editing Skills
 
 ## Overview
 

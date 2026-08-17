@@ -36,7 +36,7 @@ npx skills add ./ -g              # user-wide: ~/.claude/skills/
 npx skills add ./ --list          # show what's available without installing
 npx skills update                 # update installed skills to latest
 npx skills list                   # what's installed where (alias: ls)
-npx skills remove update-skill    # uninstall
+npx skills remove editing-skills  # uninstall
 ```
 
 Default install is a symlink to a canonical copy, so edits here take effect immediately across
@@ -75,7 +75,7 @@ field; `name` and `description` are the only required ones.
 
 | Skill | Use when |
 |---|---|
-| `update-skill` | Changing, fixing, or extending a skill that already exists |
+| `editing-skills` | Changing, fixing, or extending a skill that already exists |
 
 ## Conventions
 
