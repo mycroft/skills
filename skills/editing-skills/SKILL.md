@@ -33,18 +33,23 @@ Check the transcript for whether the skill was actually invoked. Guessing wrong 
 
 ## Edit the Source, Then Deploy
 
-Edits belong in the development repo — typically `~/dev/skills` — never in a deployed copy. A deployed
-copy either shadows the source, so your change dies at the next install, or is a symlink back to it,
-so you were editing the source all along by a confusing path.
+Edits belong in the development repo — typically `~/dev/skills` — never in a deployed copy, which is
+overwritten on the next update.
 
-Once the edit passes, propagate it with the `skills` CLI:
+Installing does not symlink back to your repo. `npx skills add` copies the skill into a canonical
+directory (`~/.agents/skills/<name>`) and points each agent's directory at that copy, so **repo edits
+stay invisible to the running agent until you re-sync**:
 
-- **Symlinked install** (the default): already live, nothing to run.
-- **`--copy` install:** `npx skills update <name>` re-syncs from the source.
-- **Installed from a git remote** rather than a local path: `npx skills update` fetches that remote, so
-  push first — otherwise the update pulls the old version back over your edit.
+```bash
+npx skills update <name>   # re-sync the deployed copy from its source
+npx skills list            # show each skill's source and location
+```
 
-Run `npx skills list` to see each skill's source and location when you are unsure which case applies.
+If the skill was installed from a git remote rather than a local path, `update` fetches that remote —
+push first, or it pulls the old version back over your edit.
+
+To confirm a deploy landed, diff the two copies:
+`diff ~/.agents/skills/<name>/SKILL.md skills/<name>/SKILL.md`
 
 ## Budget the Edit
 
