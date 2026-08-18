@@ -79,6 +79,7 @@ field; `name` and `description` are the only required ones.
 
 | Skill | Use when |
 |---|---|
+| `brutally-honest` | Demanding raw, unfiltered feedback on a decision, plan, or piece of work |
 | `commit` | Writing a commit message and committing staged changes |
 | `editing-skills` | Changing, fixing, or extending a skill that already exists |
 | `review` | Reviewing code, a diff, or a pull request before approving or merging |
