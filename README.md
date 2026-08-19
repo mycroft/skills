@@ -85,6 +85,19 @@ field; `name` and `description` are the only required ones.
 | `editing-skills` | Changing, fixing, or extending a skill that already exists |
 | `review` | Reviewing code, a diff, or a pull request before approving or merging |
 
+## Resources
+
+Other skills repositories worth reading, with a few skills from each as a starting point.
+
+| Repository | Worth a look |
+| --- | --- |
+| [obra/superpowers](https://github.com/obra/superpowers) — process skills built around TDD and RED-GREEN-REFACTOR | [`writing-skills`](https://github.com/obra/superpowers/tree/main/skills/writing-skills), [`writing-plans`](https://github.com/obra/superpowers/tree/main/skills/writing-plans), [`using-git-worktrees`](https://github.com/obra/superpowers/tree/main/skills/using-git-worktrees) |
+| [mattpocock/skills](https://github.com/mattpocock/skills) — "Skills for Real Engineers", grouped into categories rather than a flat namespace | [`teach`](https://github.com/mattpocock/skills/tree/main/skills/productivity/teach), [`grill-me`](https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me), [`loop-me`](https://github.com/mattpocock/skills/tree/main/skills/in-progress/loop-me) |
+| [anthropics/skills](https://github.com/anthropics/skills) — Anthropic's public Agent Skills repository | [`skill-creator`](https://github.com/anthropics/skills/tree/main/skills/skill-creator), [`mcp-builder`](https://github.com/anthropics/skills/tree/main/skills/mcp-builder) |
+
+`superpowers:writing-skills` is the one this repo actually depends on — see
+[Dependency: superpowers](#dependency-superpowers). The rest are reference reading.
+
 ## Conventions
 
 Skills follow `superpowers:writing-skills`:
