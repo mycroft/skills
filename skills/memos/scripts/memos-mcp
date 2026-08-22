@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Minimal JSON-RPC client for a Memos MCP endpoint (streamable HTTP; no handshake needed).
+# Token comes from $MEMOS_MCP_TOKEN, else `pass mcp/memos`.
+#
+#   memos-mcp tools                       list tool names and one-line descriptions
+#   memos-mcp schema [-r] <tool>          input schema ($defs stripped; -r keeps them)
+#   memos-mcp call <tool> ['{json}']      call a tool ('-' reads arguments from stdin)
+#   memos-mcp raw <method> ['{json}']     send any JSON-RPC method
+set -euo pipefail
+
+URL="${MEMOS_MCP_URL:-https://memos.iop.cx/mcp}"
+
+die() { printf 'memos-mcp: %s\n' "$1" >&2; exit 1; }
+
+token() {
+  if [ -n "${MEMOS_MCP_TOKEN:-}" ]; then
+    printf '%s' "$MEMOS_MCP_TOKEN"
+    return
+  fi
+  # First line that is not a URL and not a `key: value` field; strips a token:/password: key.
+  local t
+  t=$(pass mcp/memos 2>/dev/null \
+      | sed -n 's/^\(token\|password\|api_key\)[: ] *//p; /^[a-z_]*[: ]/!p' \
+      | grep -v '^https\?://' | grep -v '^[[:space:]]*$' | head -n1) || true
+  [ -n "$t" ] || die "no \$MEMOS_MCP_TOKEN and no token found in \`pass mcp/memos\`"
+  printf '%s' "$t"
+}
+
+rpc() { # method, params-json -> the JSON-RPC response object
+  local body out
+  body=$(jq -nc --arg m "$1" --argjson p "$2" '{jsonrpc:"2.0",id:1,method:$m,params:$p}')
+  # Memos answers with plain JSON; the `data:` strip keeps this working if it ever switches to SSE.
+  out=$(curl -sS -m 60 -X POST "$URL" \
+    -H "Authorization: Bearer $(token)" \
+    -H 'Content-Type: application/json' \
+    -H 'Accept: application/json, text/event-stream' \
+    -d "$body" | sed 's/^data: //' | grep -v '^event: ' | grep -v '^[[:space:]]*$' | tail -n1)
+  [ -n "$out" ] || die "empty response from $URL (endpoint down?)"
+  if [ "$(jq -r 'has("error")' <<<"$out")" = true ]; then
+    die "$(jq -r '.error.message // "unknown error"' <<<"$out")"
+  fi
+  printf '%s' "$out"
+}
+
+args_json() { # optional positional or '-' for stdin, default {}
+  case "${1-}" in
+    ''|'{}') printf '{}' ;;
+    '-')     cat ;;
+    *)       printf '%s' "$1" ;;
+  esac
+}
+
+case "${1-}" in
+  tools)
+    rpc tools/list '{}' | jq -r '.result.tools[] | "\(.name)\t\(.description | split("\n")[0])"'
+    ;;
+  schema)
+    shift
+    raw=false; [ "${1-}" = "-r" ] && { raw=true; shift; }
+    [ $# -ge 1 ] || die "usage: memos-mcp schema [-r] <tool>"
+    rpc tools/list '{}' | jq --arg n "$1" --argjson raw "$raw" -e \
+      '.result.tools[] | select(.name==$n) | .inputSchema | if $raw then . else del(."$defs") end' \
+      || die "no such tool: $1"
+    ;;
+  call)
+    [ $# -ge 2 ] || die "usage: memos-mcp call <tool> ['{json}'|-]"
+    tool=$2; shift 2
+    args=$(args_json "${1-}")
+    jq -e . >/dev/null <<<"$args" || die "arguments are not valid JSON"
+    res=$(rpc tools/call "$(jq -nc --arg n "$tool" --argjson a "$args" '{name:$n,arguments:$a}')")
+    if [ "$(jq -r '.result.isError // false' <<<"$res")" = true ]; then
+      jq -r '.result.content[]? | .text // tojson' <<<"$res" >&2
+      exit 1
+    fi
+    jq -r '.result.content[]? | .text // tojson' <<<"$res"
+    ;;
+  raw)
+    [ $# -ge 2 ] || die "usage: memos-mcp raw <method> ['{json}'|-]"
+    method=$2; shift 2
+    rpc "$method" "$(args_json "${1-}")" | jq .
+    ;;
+  ''|-h|--help|help)
+    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+  *)
+    die "unknown command: $1 (try --help)"
+    ;;
+esac
