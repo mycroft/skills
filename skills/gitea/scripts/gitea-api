@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Authenticated calls to the Gitea REST API. Token from $GITEA_TOKEN, else `pass mcp/gitea`.
+#
+#   gitea-api get <path> [k=v ...]                  GET, query params url-encoded
+#   gitea-api post|patch|put|delete <path> ['{json}'|-] [k=v ...]
+#
+# <path> may be given with or without the /api/v1 prefix. Response bodies are passed through
+# unchanged (compact JSON, or plain text for /raw/ paths) — pipe to jq yourself.
+# On a GET, an X-Total-Count header is reported on stderr so truncation is visible.
+set -euo pipefail
+
+BASE="${GITEA_URL:-https://git.mkz.me}"
+
+die() { printf 'gitea-api: %s\n' "$1" >&2; exit 1; }
+
+token() {
+  if [ -n "${GITEA_TOKEN:-}" ]; then
+    printf '%s' "$GITEA_TOKEN"
+    return
+  fi
+  local t
+  t=$(pass mcp/gitea 2>/dev/null \
+      | sed -n 's/^\(token\|password\|api_key\)[: ] *//p; /^[a-z_]*[: ]/!p' \
+      | grep -v '^https\?://' | grep -v '^[[:space:]]*$' | head -n1) || true
+  [ -n "$t" ] || die "no \$GITEA_TOKEN and no token found in \`pass mcp/gitea\`"
+  printf '%s' "$t"
+}
+
+[ $# -ge 2 ] || { sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+
+method=$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]'); shift
+case "$method" in GET|POST|PATCH|PUT|DELETE) ;; *) die "unsupported method: $method" ;; esac
+
+path=$1; shift
+case "$path" in
+  /api/v1/*) ;;
+  /*)  path="/api/v1$path" ;;
+  *)   path="/api/v1/$path" ;;
+esac
+
+body=''; params=()
+for arg in "$@"; do
+  case "$arg" in
+    -)      body=$(cat) ;;
+    '{'*)   body=$arg ;;
+    *=*)    params+=(--data-urlencode "$arg") ;;
+    *)      die "unrecognised argument: $arg (expected k=v, '{json}' or -)" ;;
+  esac
+done
+
+hdr=$(mktemp -t gitea-api.XXXXXX)
+trap 'rm -f "$hdr"' EXIT
+curl_args=(-sS -m 120 -X "$method" -H "Authorization: token $(token)" -H 'Accept: application/json'
+           -D "$hdr" -w '\n%{http_code}')
+if [ -n "$body" ]; then
+  jq -e . >/dev/null <<<"$body" || die "body is not valid JSON"
+  curl_args+=(-H 'Content-Type: application/json' -d "$body")
+fi
+# --get keeps url-encoded params in the query string instead of the body.
+if [ "$method" = GET ]; then curl_args+=(--get); fi
+if [ ${#params[@]} -gt 0 ]; then curl_args+=("${params[@]}"); fi
+
+out=$(curl "${curl_args[@]}" "$BASE$path")
+code=${out##*$'\n'}
+body_out=${out%$'\n'*}
+
+total=$(tr -d '\r' < "$hdr" | sed -n 's/^[Xx]-[Tt]otal-[Cc]ount: //p' | tail -n1)
+if [ -n "$total" ]; then printf 'gitea-api: X-Total-Count: %s\n' "$total" >&2; fi
+
+case "$code" in
+  2*) printf '%s\n' "$body_out" ;;
+  *)  printf '%s\n' "$body_out" >&2; die "HTTP $code on $method $path" ;;
+esac
