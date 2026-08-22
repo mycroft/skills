@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Minimal JSON-RPC client for an Outline MCP endpoint (streamable HTTP, stateless).
+# Token comes from $OUTLINE_MCP_TOKEN, else `pass mcp/outline`.
+#
+#   outline-mcp tools                     list tool names and descriptions
+#   outline-mcp schema <tool>             print one tool's input schema
+#   outline-mcp call <tool> ['{json}']    call a tool ('-' reads arguments from stdin)
+#   outline-mcp raw <method> ['{json}']   send any JSON-RPC method
+set -euo pipefail
+
+URL="${OUTLINE_MCP_URL:-https://outline.iop.cx/mcp}"
+
+die() { printf 'outline-mcp: %s\n' "$1" >&2; exit 1; }
+
+token() {
+  if [ -n "${OUTLINE_MCP_TOKEN:-}" ]; then
+    printf '%s' "$OUTLINE_MCP_TOKEN"
+  else
+    pass mcp/outline 2>/dev/null | head -n1 || die "no \$OUTLINE_MCP_TOKEN and \`pass mcp/outline\` failed"
+  fi
+}
+
+rpc() { # method, params-json -> the JSON-RPC response object
+  local body out
+  body=$(jq -nc --arg m "$1" --argjson p "$2" '{jsonrpc:"2.0",id:1,method:$m,params:$p}')
+  out=$(curl -sS -m 60 -X POST "$URL" \
+    -H "Authorization: Bearer $(token)" \
+    -H 'Content-Type: application/json' \
+    -H 'Accept: application/json, text/event-stream' \
+    -d "$body" | sed -n 's/^data: //p' | tail -n1)
+  [ -n "$out" ] || die "empty response from $URL (auth failure or endpoint down)"
+  if [ "$(jq -r 'has("error")' <<<"$out")" = true ]; then
+    die "$(jq -r '.error.message // "unknown error"' <<<"$out")"
+  fi
+  printf '%s' "$out"
+}
+
+args_json() { # optional positional or '-' for stdin, default {}
+  case "${1-}" in
+    ''|'{}') printf '{}' ;;
+    '-')     cat ;;
+    *)       printf '%s' "$1" ;;
+  esac
+}
+
+case "${1-}" in
+  tools)
+    rpc tools/list '{}' | jq -r '.result.tools[] | "\(.name)\t\(.description)"'
+    ;;
+  schema)
+    [ $# -ge 2 ] || die "usage: outline-mcp schema <tool>"
+    rpc tools/list '{}' | jq --arg n "$2" -e '.result.tools[] | select(.name==$n) | .inputSchema' \
+      || die "no such tool: $2"
+    ;;
+  call)
+    [ $# -ge 2 ] || die "usage: outline-mcp call <tool> ['{json}'|-]"
+    tool=$2; shift 2
+    args=$(args_json "${1-}")
+    jq -e . >/dev/null <<<"$args" || die "arguments are not valid JSON"
+    res=$(rpc tools/call "$(jq -nc --arg n "$tool" --argjson a "$args" '{name:$n,arguments:$a}')")
+    if [ "$(jq -r '.result.isError // false' <<<"$res")" = true ]; then
+      jq -r '.result.content[]? | .text // tojson' <<<"$res" >&2
+      exit 1
+    fi
+    jq -r '.result.content[]? | .text // tojson' <<<"$res"
+    ;;
+  raw)
+    [ $# -ge 2 ] || die "usage: outline-mcp raw <method> ['{json}'|-]"
+    method=$2; shift 2
+    rpc "$method" "$(args_json "${1-}")" | jq .
+    ;;
+  ''|-h|--help|help)
+    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+  *)
+    die "unknown command: $1 (try --help)"
+    ;;
+esac
