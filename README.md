@@ -84,6 +84,7 @@ field; `name` and `description` are the only required ones.
 | `commit` | Writing a commit message and committing staged changes |
 | `editing-skills` | Changing, fixing, or extending a skill that already exists |
 | `gitea` | Reading or acting on repos, issues, PRs, or Actions on the Gitea instance at git.mkz.me |
+| `grafana` | Querying metrics, logs, alerts, or dashboards on the Grafana at grafana.services.mkz.me |
 | `memos` | Reading, searching, or writing notes in the Memos instance at memos.iop.cx |
 | `outline` | Reading, searching, or writing documents in the Outline wiki at outline.iop.cx |
 | `review` | Reviewing code, a diff, or a pull request before approving or merging |
