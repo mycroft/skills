@@ -87,6 +87,7 @@ field; `name` and `description` are the only required ones.
 | `memos` | Reading, searching, or writing notes in the Memos instance at memos.iop.cx |
 | `outline` | Reading, searching, or writing documents in the Outline wiki at outline.iop.cx |
 | `review` | Reviewing code, a diff, or a pull request before approving or merging |
+| `vikunja` | Reading or updating to-dos in the Vikunja instance at todo.iop.cx |
 
 ## Resources
 
