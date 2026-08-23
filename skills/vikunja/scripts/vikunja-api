@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Authenticated calls to the Vikunja REST API. Token from $VIKUNJA_TOKEN, else `pass mcp/vikunja`.
+#
+#   vikunja-api get <path> [k=v ...]                GET, query params url-encoded
+#   vikunja-api put|post|delete <path> ['{json}'|-] [k=v ...]
+#
+# Vikunja inverts the usual verbs: PUT creates, POST updates. See SKILL.md.
+# <path> may be given with or without the /api/v1 prefix. Response bodies are passed through
+# unchanged (compact JSON) — pipe to jq yourself. Pagination totals from the response headers
+# are reported on stderr so truncation is visible.
+set -euo pipefail
+
+BASE="${VIKUNJA_URL:-https://todo.iop.cx}"
+
+die() { printf 'vikunja-api: %s\n' "$1" >&2; exit 1; }
+
+token() {
+  if [ -n "${VIKUNJA_TOKEN:-}" ]; then
+    printf '%s' "$VIKUNJA_TOKEN"
+    return
+  fi
+  local t
+  t=$(pass mcp/vikunja 2>/dev/null \
+      | sed -n 's/^\(token\|password\|api_key\)[: ] *//p; /^[a-z_]*[: ]/!p' \
+      | grep -v '^https\?://' | grep -v '^[[:space:]]*$' | head -n1) || true
+  [ -n "$t" ] || die "no \$VIKUNJA_TOKEN and no token found in \`pass mcp/vikunja\`"
+  printf '%s' "$t"
+}
+
+[ $# -ge 2 ] || { sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+
+method=$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]'); shift
+case "$method" in GET|POST|PUT|DELETE) ;; *) die "unsupported method: $method (Vikunja uses PUT to create, POST to update)" ;; esac
+
+path=$1; shift
+case "$path" in
+  /api/v1/*) ;;
+  /*)  path="/api/v1$path" ;;
+  *)   path="/api/v1/$path" ;;
+esac
+
+body=''; params=()
+for arg in "$@"; do
+  case "$arg" in
+    -)      body=$(cat) ;;
+    '{'*)   body=$arg ;;
+    *=*)    params+=(--data-urlencode "$arg") ;;
+    *)      die "unrecognised argument: $arg (expected k=v, '{json}' or -)" ;;
+  esac
+done
+
+hdr=$(mktemp -t vikunja-api.XXXXXX)
+trap 'rm -f "$hdr"' EXIT
+curl_args=(-sS -m 120 -X "$method" -H "Authorization: Bearer $(token)" -H 'Accept: application/json'
+           -D "$hdr" -w '\n%{http_code}')
+if [ -n "$body" ]; then
+  jq -e . >/dev/null <<<"$body" || die "body is not valid JSON"
+  curl_args+=(-H 'Content-Type: application/json' -d "$body")
+fi
+if [ "$method" = GET ]; then curl_args+=(--get); fi
+if [ ${#params[@]} -gt 0 ]; then curl_args+=("${params[@]}"); fi
+
+out=$(curl "${curl_args[@]}" "$BASE$path")
+code=${out##*$'\n'}
+body_out=${out%$'\n'*}
+
+pag=$(tr -d '\r' < "$hdr" | sed -n 's/^[Xx]-[Pp]agination-\([a-zA-Z-]*\): /\1=/p' | paste -sd' ')
+if [ -n "$pag" ]; then printf 'vikunja-api: %s\n' "$pag" >&2; fi
+
+case "$code" in
+  2*) printf '%s\n' "$body_out" ;;
+  *)  printf '%s\n' "$body_out" >&2; die "HTTP $code on $method $path" ;;
+esac
