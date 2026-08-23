@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Authenticated calls to the Grafana HTTP API. Token from $GRAFANA_TOKEN, else `pass mcp/grafana`.
+#
+#   grafana-api get <path> [k=v ...]                GET, query params url-encoded
+#   grafana-api post|put|patch|delete <path> ['{json}'|-] [k=v ...]
+#
+# <path> is taken as given (Grafana has no single API prefix: /api/search, /api/ds/query,
+# /api/datasources/proxy/uid/{uid}/... all coexist). Response bodies are passed through unchanged —
+# pipe to jq yourself. Datasource proxy paths return the datasource's own native JSON.
+set -euo pipefail
+
+BASE="${GRAFANA_URL:-https://grafana.services.mkz.me}"
+
+die() { printf 'grafana-api: %s\n' "$1" >&2; exit 1; }
+
+token() {
+  if [ -n "${GRAFANA_TOKEN:-}" ]; then
+    printf '%s' "$GRAFANA_TOKEN"
+    return
+  fi
+  local t
+  t=$(pass mcp/grafana 2>/dev/null \
+      | sed -n 's/^\(token\|password\|api_key\)[: ] *//p; /^[a-z_]*[: ]/!p' \
+      | grep -v '^https\?://' | grep -v '^[[:space:]]*$' | head -n1) || true
+  [ -n "$t" ] || die "no \$GRAFANA_TOKEN and no token found in \`pass mcp/grafana\`"
+  printf '%s' "$t"
+}
+
+[ $# -ge 2 ] || { sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+
+method=$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]'); shift
+case "$method" in GET|POST|PUT|PATCH|DELETE) ;; *) die "unsupported method: $method" ;; esac
+
+path=$1; shift
+case "$path" in /*) ;; *) path="/$path" ;; esac
+
+body=''; params=()
+for arg in "$@"; do
+  case "$arg" in
+    -)      body=$(cat) ;;
+    '{'*)   body=$arg ;;
+    *=*)    params+=(--data-urlencode "$arg") ;;
+    *)      die "unrecognised argument: $arg (expected k=v, '{json}' or -)" ;;
+  esac
+done
+
+curl_args=(-sS -m 120 -X "$method" -H "Authorization: Bearer $(token)" -H 'Accept: application/json'
+           -w '\n%{http_code}')
+if [ -n "$body" ]; then
+  jq -e . >/dev/null <<<"$body" || die "body is not valid JSON"
+  curl_args+=(-H 'Content-Type: application/json' -d "$body")
+fi
+if [ "$method" = GET ]; then curl_args+=(--get); fi
+if [ ${#params[@]} -gt 0 ]; then curl_args+=("${params[@]}"); fi
+
+out=$(curl "${curl_args[@]}" "$BASE$path")
+code=${out##*$'\n'}
+body_out=${out%$'\n'*}
+
+case "$code" in
+  2*) printf '%s\n' "$body_out" ;;
+  *)  printf '%s\n' "$body_out" >&2; die "HTTP $code on $method $path" ;;
+esac
