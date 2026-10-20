@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Use when the user asks to commit staged changes, write a commit message, or record work in git.
+description: Use when the user asks to commit changes, write a commit message, or record work in git.
 ---
 
 Your task is to help the user to generate a commit message and commit the changes using git.
@@ -8,9 +8,28 @@ Your task is to help the user to generate a commit message and commit the change
 ## Guidelines
 
 - Only generate the message for staged files/changes
-- Don't add any files using `git add`. The user will decide what to add. 
+- Stage files only as described in Staging below.
 - Focus on why the change and not only the change content. If required, ask the user for more explaination.
 - Follow the rules below for the commit message.
+
+## Staging
+
+If `git diff --cached` is not empty, the user has already chosen what to commit: commit exactly that
+and stage nothing more. Mention any unstaged change that looks like it belongs.
+
+If nothing is staged:
+
+1. Read `git status`, `git diff`, and every untracked file you might add. Decide which files belong
+   to the change the user asked to commit.
+2. Stage them by explicit path: `git add src/parser.py src/tokenizer.py`. Never `git add .`, `-A`,
+   `-u`, a directory, or a wildcard — those stage files you have not read.
+3. If a file mixes this change with unrelated edits, stage only the related hunks: write a patch with
+   just those hunks and `git apply --cached` it (`git add -p` needs a terminal).
+4. If you cannot tell whether a file belongs, leave it unstaged and name it in your reply.
+
+Then, as its own command, run `git diff --cached --stat` and read the output. Every listed path must
+belong to the change; unstage any that does not with `git restore --staged <path>`. Run `git commit`
+only after this check — never chain `git add` or the check into `git commit` with `&&`.
 
 ## Pre-commit Checks
 
