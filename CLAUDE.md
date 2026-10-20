@@ -21,7 +21,7 @@ skills/<name>/SKILL.md  →  git push  →  npx skills add mycroft/skills
 `~/.agents/.skill-lock.json` records each installed skill's origin and a folder hash. Consequences:
 
 - Editing `~/.agents/skills/<name>/` edits the *installed* copy — that change is not in the repo and
-  the next `npx skills update` overwrites it. Author here, push, then `npx skills update <name>`.
+  the next `npx skills update` overwrites it. Author here, push, then propagate (below).
 - `~/.agents/skills/` also holds skills from other sources (`obra/superpowers`, `mattpocock/skills`,
   …). Not everything installed belongs to this repo — check the lock file's `source` before assuming
   a skill lives here.
@@ -29,6 +29,17 @@ skills/<name>/SKILL.md  →  git push  →  npx skills add mycroft/skills
   so `git fetch` and check `git status -sb` before starting work; if
   `diff ~/.agents/skills/<name>/SKILL.md skills/<name>/SKILL.md` shows changes you didn't make, the
   checkout is stale.
+
+Propagate from outside the repo. Inside it, the CLI treats `skills/` as project scope, and
+`update -y` refreshes those copies instead of the installed ones:
+
+```sh
+cd ~
+npx skills update <name> -g -y                         # existing skill
+npx skills add mycroft/skills -g -s <name> -a '*' -y    # new skill: update ignores it
+npx skills remove -g -s <name> -y                      # deleted skill
+npx skills list -g                                     # Source should read mycroft/skills
+```
 
 The README also documents `npx skills add ./` (a symlink to this checkout) and a Claude Code plugin
 install via `.claude-plugin/`. Neither is how the skills are installed here.
@@ -129,6 +140,7 @@ Every skill under `skills/` currently validates clean; keep it that way.
    `` | `<name>` | <when to use it, as a gerund phrase> | ``. The table is maintained by hand and
    drifts easily.
 3. Validate.
+4. Push, then `add` it to the agents (see Distribution loop) — `update` won't pick up a new skill.
 
 ## Commits
 
