@@ -81,7 +81,7 @@ field; `name` and `description` are the only required ones.
 |---|---|
 | `brutally-honest` | Demanding raw, unfiltered feedback on a decision, plan, or piece of work |
 | `coding-with-restraint` | Writing or changing code, to avoid overbuilding and out-of-scope edits |
-| `commit` | Writing a commit message and committing staged changes |
+| `commit` | Writing a commit message and committing changes |
 | `editing-skills` | Changing, fixing, or extending a skill that already exists |
 | `gitea` | Reading or acting on repos, issues, PRs, or Actions on the Gitea instance at git.mkz.me |
 | `grafana` | Querying metrics, logs, alerts, or dashboards on the Grafana at grafana.services.mkz.me |
