@@ -50,7 +50,7 @@ gh pr view <url> --json title,body,headRefName,isDraft,reviewDecision,mergeable,
 Attach each PR to a task through the tracker's linked PRs, or the task key in its branch, title, or
 body. A PR that matches no task but names an issue key forms a task of its own: the key plus a short
 topic taken from its PRs, e.g. `OpenTofu migration (PLA-859)`. Only PRs with no key go under
-**Other**.
+**Misc / Others**.
 
 Classify each PR; the first matching row wins:
 
@@ -77,10 +77,13 @@ to post, in exactly this shape:
 - <PR URL> ~ <what the PR does, under 10 words>
 <Task name>:
 - <PR URL> ~ <what the PR does, under 10 words>
+Misc / Others:
+- <PR URL> ~ <what the PR does, under 10 words>
 Thanks !
 ```
 
-If no PR needs review, write "No PR waiting for review." in its place.
+`Misc / Others` is always the last group; leave it out when none of its PRs needs review. If no PR
+needs review, write "No PR waiting for review." in its place.
 
 **One block per task**, most urgent first:
 
