@@ -5,12 +5,13 @@ description: Use when the user asks for a daily recap, a stand-up summary, what 
 
 # Daily Recap
 
-Builds the user's daily recap: a review-request message ready to post, then a short status per task
-with the next actions. Read-only: never post, merge, approve, or change anything.
+Builds the user's daily recap: a review-request message ready to post, a short status per task with
+the next actions, then a few small chores worth slipping in. Read-only: never post, merge, approve,
+or change anything.
 
 ## 1. Resolve the sources
 
-The recap uses exactly these four sources. Take each one's location from the context (CLAUDE.md,
+The recap uses exactly these sources. Take each one's location from the context (CLAUDE.md,
 AGENTS.md, the agent's memory) and use the fallback only when the context names none:
 
 | Source | From the context | Fallback |
@@ -19,6 +20,10 @@ AGENTS.md, the agent's memory) and use the fallback only when the context names 
 | Notes vault | The vault path it names | Obsidian's open vault: the `"open": true` entry in `obsidian.json` (`~/.config/obsidian/` on Linux, `~/Library/Application Support/obsidian/` on macOS, `%APPDATA%\obsidian\` on Windows) |
 | Agent memory | The agent's own persistent memory | — |
 | Pull requests | The GitHub org or repos it names | Repos owned by the user's own account |
+| Monitoring | The monitoring or alerting system it names (Grafana, Datadog, …) | Not used, not listed as skipped |
+| Slack | The channels it names | Not used, not listed as skipped |
+
+Monitoring and Slack only feed the chores (step 5).
 
 Only CLAUDE.md, AGENTS.md, and memory can widen the PR scope. An org seen in the vault or in the
 user's recent PRs does not: with no org named, the recap covers the user's own repos, even if that
@@ -78,9 +83,18 @@ or memory, a deadline.
 Tasks go high, then medium, then low; within a level, most urgent first. Misc / Others is not a task:
 it has no priority and always comes last.
 
-## 5. Write the recap
+## 5. Pick the chores
 
-The answer is these three parts, in this order, and nothing else.
+Find small tech-debt chores, each 15 to 30 minutes, with the signals in
+[reference/chores.md](reference/chores.md).
+
+- **Grounded chores found:** rank them by the priority of the task they relate to, chores tied to no
+  task last, and keep the first three.
+- **None found:** pick exactly one generic chore from the same file.
+
+## 6. Write the recap
+
+The answer is these four parts, in this order, and nothing else.
 
 **The review request.** Only the *needs review* PRs, grouped by task in priority order, in a code
 block for the user to post, in exactly this shape:
@@ -113,4 +127,11 @@ needs review, write "No PR waiting for review." in its place.
   uses the 🚫 **Blocked:** form.
 - A task with nothing to do today gets "nothing to do today" as its status and no bullets.
 
-**One closing line** naming the sources that were skipped, if any.
+**One line** naming the sources that were skipped, if any.
+
+**The chores**, always last:
+
+```
+💡 Did you also think to…
+- <chore, starting with a verb>? <what was found, for a grounded chore>
+```
