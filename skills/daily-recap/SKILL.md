@@ -63,12 +63,27 @@ Classify each PR; the first matching row wins:
 | `reviewDecision: APPROVED` | merge | Merge (update the branch first if `mergeStateStatus: BEHIND`) |
 | Anything else | needs review (blocked) | Goes in the review request |
 
-## 4. Write the recap
+## 4. Rank the tasks
+
+For each task, ask: **is this one of the most important things for the user to work on?** Answer
+from the sources: the tracker's priority, a focus or goal the user (or their manager) set in the notes
+or memory, a deadline.
+
+| Answer | Priority |
+|---|---|
+| Yes | high |
+| No | medium |
+| No, and the sources call it a nice-to-have, "someday", or for later | low |
+
+Tasks go high, then medium, then low; within a level, most urgent first. Misc / Others is not a task:
+it has no priority and always comes last.
+
+## 5. Write the recap
 
 The answer is these three parts, in this order, and nothing else.
 
-**The review request.** Only the *needs review* PRs, grouped by task, in a code block for the user
-to post, in exactly this shape:
+**The review request.** Only the *needs review* PRs, grouped by task in priority order, in a code
+block for the user to post, in exactly this shape:
 
 ```
 👋 Hey, I would like a quick review for those:
@@ -85,10 +100,10 @@ Thanks !
 `Misc / Others` is always the last group; leave it out when none of its PRs needs review. If no PR
 needs review, write "No PR waiting for review." in its place.
 
-**One block per task**, most urgent first:
+**One block per task**, in priority order:
 
 ```
-**<Task name>** (<tracker key>): <status in a few words>
+[<high|medium|low>] **<Task name>** (<tracker key>): <status in a few words>
 - <action starting with a verb and naming the PR, e.g. "Merge tf-aws#2589">
 - 🚫 **Blocked: <what it waits on>, <who or what unblocks it>**
 ```
