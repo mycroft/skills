@@ -80,6 +80,7 @@ field; `name` and `description` are the only required ones.
 | Skill | Use when |
 |---|---|
 | `brutally-honest` | Demanding raw, unfiltered feedback on a decision, plan, or piece of work |
+| `close-session` | Wrapping up a session, saving what it produced to the notes vault, memory, and linked issue |
 | `coding-with-restraint` | Writing or changing code, to avoid overbuilding and out-of-scope edits |
 | `commit` | Writing a commit message and committing changes |
 | `daily-recap` | Getting a daily recap of active tasks and PRs, with a review request ready to post |
